@@ -1,63 +1,88 @@
-name: Playwright Test Automation Pipeline
+name: Enterprise Playwright CI/CD Pipeline & AI Triage
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 concurrency:
   group: e2e-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
-  test:
-    name: Playwright Test Execution
-    timeout-minutes: 15
+  validate-and-test:
+    name: Test Execution (${{ matrix.project }})
+    timeout-minutes: 20
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [unit, smoke, regression]
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install NPM Dependencies
         run: npm ci
 
       - name: TypeCheck & Static Analysis
         run: npm run typecheck
 
-      - name: Install Playwright Browsers
+      - name: Install Playwright Browsers & System Dependencies
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright Smoke Tests
-        run: npm run test:smoke
+      - name: Execute Test Suite (${{ matrix.project }})
+        id: run-tests
+        run: npm run "test:${{ matrix.project }}"
         env:
           CI: 'true'
+          NODE_ENV: 'dev'
           BASE_URL: ${{ vars.BASE_URL || 'https://playwright.dev' }}
+          TASK_APP_URL: ${{ vars.TASK_APP_URL }}
+          E2E_AUTH: 'local'
 
-      - name: Upload Test Report Artifacts
+      - name: Run AI Failure Triage Engine
+        if: failure() && steps.run-tests.outcome == 'failure'
+        run: npx ts-node scripts/ai-triage.ts test-results/report.json
+        env:
+          CI: 'true'
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_TRIAGE_MODEL: ${{ vars.AI_TRIAGE_MODEL || 'gpt-4o-mini' }}
+
+      - name: Upload Playwright Reports & Triage Summary
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: |
             playwright-report/
             test-results/report.json
+            test-results/triage-summary.md
           retention-days: 14
           if-no-files-found: warn
 
-      - name: Upload failure traces
+      - name: Upload Rich Failure Artifacts (Traces, Screenshots, Videos)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-failure-traces-screenshots
+          name: failure-artifacts-${{ matrix.project }}
           path: |
             test-results/**/*.zip
             test-results/**/*.png
+            test-results/**/*.webm
           retention-days: 14
           if-no-files-found: ignore

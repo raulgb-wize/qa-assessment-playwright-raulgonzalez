@@ -7,6 +7,20 @@ export const API_CONFIG = {
   apiKey: process.env.API_KEY || '',
 };
 
+/**
+ * Target URL for the Real Task App (Challenge 2.3).
+ * Uses TASK_APP_URL if set, otherwise BASE_URL when pointed away from playwright.dev,
+ * falling back to the Vikunja demo sandbox so CI and fresh clones stay green.
+ */
+export const TASK_APP_CONFIG = {
+  baseUrl: (
+    process.env.TASK_APP_URL ||
+    (process.env.BASE_URL && !process.env.BASE_URL.includes('playwright.dev')
+      ? process.env.BASE_URL
+      : 'https://try.vikunja.io')
+  ).replace(/\/$/, ''),
+};
+
 /** Paths for optional Cognito session artifacts (see cognito recipe). */
 export const AUTH_FILES = {
   STORAGE_STATE: '.auth/session.json',
