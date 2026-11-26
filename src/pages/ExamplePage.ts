@@ -17,7 +17,7 @@ export class ExamplePage extends BasePage {
   }
 
   async openHome(): Promise<void> {
-    await this.navigate('/');
+    await this.navigate('https://playwright.dev/');
   }
 
   async assertHomeVisible(): Promise<void> {

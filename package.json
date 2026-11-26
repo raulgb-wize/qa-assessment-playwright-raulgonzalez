@@ -9,10 +9,12 @@
     "test:smoke": "playwright test --project=smoke",
     "test:regression": "playwright test --project=regression",
     "test:api": "playwright test --project=regression tests/api",
+    "test:unit": "playwright test tests/unit",
     "test:debug": "playwright test --ui",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
     "report": "playwright show-report",
+    "triage": "ts-node scripts/ai-triage.ts",
     "setup": "npx playwright install"
   },
   "keywords": [

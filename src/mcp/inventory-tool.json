@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "calculate_inventory_pricing",
+  "title": "InventoryPricingCalculator",
+  "description": "Calculates expected item subtotal, 8% sales tax, and grand total for dynamic e-commerce checkout flows. Supports product filtering by name, price bounds, sorting, price overrides (surge pricing simulation), and out-of-stock item handling.",
+  "type": "object",
+  "properties": {
+    "productNames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of product names selected for purchase in the cart."
+    },
+    "minPrice": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Optional minimum price threshold filter."
+    },
+    "maxPrice": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Optional maximum price threshold filter."
+    },
+    "sortBy": {
+      "type": "string",
+      "enum": ["price-asc", "price-desc", "name-asc", "name-desc"],
+      "description": "Sorting criteria for the returned catalog items."
+    },
+    "taxRate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.08,
+      "description": "Sales tax rate applied to subtotal (default is 0.08 / 8%)."
+    },
+    "priceOverrides": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      },
+      "description": "Dynamic price overrides to simulate surge pricing updates (e.g. {'Sauce Labs Backpack': 39.99})."
+    },
+    "excludeOutOfStock": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether items marked as out-of-stock should be omitted from price calculation."
+    },
+    "outOfStockProducts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of product names designated as out of stock."
+    },
+    "customCatalog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "inStock": { "type": "boolean" },
+          "description": { "type": "string" }
+        },
+        "required": ["id", "name", "price", "inStock"]
+      },
+      "description": "Optional custom catalog to evaluate instead of standard Sauce Labs catalog."
+    }
+  },
+  "additionalProperties": false
+}
